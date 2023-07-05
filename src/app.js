@@ -3,8 +3,6 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 
-dotenv.config()
-
 //Mongo
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
 let db;
@@ -20,6 +18,7 @@ try {
 const app = express()
 app.use(express.json())
 app.use(cors())
+dotenv.config()
 
 //Porta
 const port = process.env.PORT || 5000;
