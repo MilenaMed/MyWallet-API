@@ -1,19 +1,20 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt"
+import { v4 as uuid } from "uuid"
 
 //Ferramentas
 const app = express()
-app.use(express.json()) 
+app.use(express.json())
 app.use(cors())
 dotenv.config()
 
 //Mongo
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
 
-try { 
+try {
     await mongoClient.connect()
     console.log("Mongo Conectado")
 } catch (err) {
@@ -24,7 +25,6 @@ const db = mongoClient.db()
 //POST - Cadastro
 app.post('/cadastro', async (request, response) => {
     const { name, senha, email } = request.body;
-    console.log("entrou cadastro")
     const senhaCriptografada = bcrypt.hashSync(senha, 10);
     const usuárioExiste = await db.collection("users").findOne({ email })
     if (usuárioExiste) {
@@ -45,6 +45,22 @@ app.post('/cadastro', async (request, response) => {
 })
 
 //POST - Login
+app.post("/", async (request, response) => {
+    const token = uuid()
+    const { email, senha } = request.body
+    const usuario = await db.collection("users").findOne({ email: email })
+    const senhaCerta = bcrypt.compareSync(senha, usuario.password)
+    try {
+        if (!usuario || !senhaCerta) {
+            return response.status(401).send("usuário não cadastrado ou senha incorreta");
+        }
+        await db.collection("sessions").insertOne({ token, userId: usuario._id })
+        response.status(200).send({ token, nomeUsuário: usuario.name })
+    } catch (err) {
+        response.status(500).send(err)
+    }
+});
+
 //POST - Operações
 //GET - Operações
 //Logout
