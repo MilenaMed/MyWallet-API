@@ -74,7 +74,7 @@ app.post("/nova-transacao/:entrada", async (request, response) => {
         if (!sessao) {
             return response.status(401).send("usuário não encontrado")
         }
-        
+
         await db.collection("historico").insertOne({
             userId: sessao.userId,
             value: Number(dadosEntrada.value),
@@ -98,8 +98,8 @@ app.post("/nova-transacao/:saida", async (request, response) => {
         if (!sessao) {
             return response.status(401).send("usuário não encontrado")
         }
-        
-        await db.collection("historico").insertOne({
+
+        await db.collection("historic").insertOne({
             userId: sessao.userId,
             value: Number(dadosSaida.value),
             description: dadosSaida.description,
@@ -112,8 +112,21 @@ app.post("/nova-transacao/:saida", async (request, response) => {
     }
 });
 
-
 //GET - Operações
+const { authorization } = request.headers
+const token = authorization?.replace('Bearer ', '')
+
+try {
+    const sessao = await db.collection("sessions").findOne({ token })
+    if (!sessao) {
+        return response.status(401).send("usuário não encontrado")
+    }
+    const histórico = await db.collection("historic").find({userId: sessao.userId}).toArray()
+        return res.send([...histórico])
+} catch (err) {
+    response.status(500).send(err);
+}
+
 //Logout
 export async function logout(request, response) {
     const { authorization } = request.headers
