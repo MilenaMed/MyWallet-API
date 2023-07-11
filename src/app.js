@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt"
 import { v4 as uuid } from "uuid"
+import dayjs from "dayjs"
 
 //Ferramentas
 const app = express()
@@ -62,19 +63,69 @@ app.post("/", async (request, response) => {
 });
 
 //POST - Operações
+//ENTRADAS
+app.post("/nova-transacao/:entrada", async (request, response) => {
+    const dadosEntrada = request.body
+    const { authorization } = request.headers
+    const token = authorization?.replace('Bearer ', '')
+
+    try {
+        const sessao = await db.collection("sessions").findOne({ token })
+        if (!sessao) {
+            return response.status(401).send("usuário não encontrado")
+        }
+        
+        await db.collection("historico").insertOne({
+            userId: sessao.userId,
+            value: Number(dadosEntrada.value),
+            description: dadosEntrada.description,
+            day: dayjs().format('DD/MM'),
+            type: "entrada",
+        })
+        return response.status(201).send("valor cadastrado com sucesso")
+    } catch (err) {
+        response.status(500).send(err);
+    }
+});
+// SAIDAS
+app.post("/nova-transacao/:saida", async (request, response) => {
+    const dadosSaida = request.body
+    const { authorization } = request.headers
+    const token = authorization?.replace('Bearer ', '')
+
+    try {
+        const sessao = await db.collection("sessions").findOne({ token })
+        if (!sessao) {
+            return response.status(401).send("usuário não encontrado")
+        }
+        
+        await db.collection("historico").insertOne({
+            userId: sessao.userId,
+            value: Number(dadosSaida.value),
+            description: dadosSaida.description,
+            day: dayjs().format('DD/MM'),
+            type: "saida",
+        })
+        return response.status(201).send("valor debitado com sucesso")
+    } catch (err) {
+        return response.status(500).send(err);
+    }
+});
+
+
 //GET - Operações
 //Logout
 export async function logout(request, response) {
-
     const { authorization } = request.headers
     const token = authorization?.replace('Bearer ', '')
     console.log(token)
-    if (!token) {
-        return response.status(401).send("usuário não encontrado")
-    }
-
 
     try {
+        const sessao = await db.collection("sessions").findOne({ token })
+        if (!sessao) {
+            return response.status(401).send("usuário não encontrado")
+        }
+
         await db.collection("sessions").deleteOne({ token })
         response.status(200).send("Usuário deslogado")
     } catch (err) {
