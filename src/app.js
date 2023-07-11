@@ -113,6 +113,7 @@ app.post("/nova-transacao/:saida", async (request, response) => {
 });
 
 //GET - Operações
+app.get("/home", async (request, response) => {
 const { authorization } = request.headers
 const token = authorization?.replace('Bearer ', '')
 
@@ -122,10 +123,11 @@ try {
         return response.status(401).send("usuário não encontrado")
     }
     const histórico = await db.collection("historic").find({userId: sessao.userId}).toArray()
-        return res.send([...histórico])
+        return response.send([...histórico])
 } catch (err) {
     response.status(500).send(err);
 }
+})
 
 //Logout
 export async function logout(request, response) {
