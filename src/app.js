@@ -64,6 +64,23 @@ app.post("/", async (request, response) => {
 //POST - Operações
 //GET - Operações
 //Logout
+export async function logout(request, response) {
+
+    const { authorization } = request.headers
+    const token = authorization?.replace('Bearer ', '')
+    console.log(token)
+    if (!token) {
+        return response.status(401).send("usuário não encontrado")
+    }
+
+
+    try {
+        await db.collection("sessions").deleteOne({ token })
+        response.status(200).send("Usuário deslogado")
+    } catch (err) {
+        response.status(500).send(err.message)
+    }
+}
 
 //Porta
 const port = process.env.PORT || 5000;
